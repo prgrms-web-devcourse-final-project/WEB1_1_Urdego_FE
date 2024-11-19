@@ -1,0 +1,21 @@
+name: Move Issue to Done on Merge to Develop
+
+on:
+  pull_request:
+    types:
+      - closed # PR이 병합되었을 때 트리거
+
+jobs:
+  move-to-done:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if PR was Merged into Develop
+        if: github.event.pull_request.base.ref == 'develop' && github.event.pull_request.merged == true
+        run: echo "PR merged into develop. Proceeding."
+
+      - name: Move Issue to Done
+        uses: actions/add-to-project@v0.3.0
+        with:
+          project_url: https://github.com/orgs/prgrms-web-devcourse-final-project/projects/42
+          column_name: Done # Done 열로 이동
+          github_token: ${{ secrets.GITHUB_TOKEN }}

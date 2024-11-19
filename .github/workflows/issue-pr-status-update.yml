@@ -1,0 +1,16 @@
+name: Move Issue to Todo on Creation
+
+on:
+  issues:
+    types: [opened] # Issue가 생성될 때 트리거
+
+jobs:
+  move-to-todo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Move Issue to Todo
+        uses: actions/add-to-project@v0.3.0
+        with:
+          project_url: https://github.com/orgs/prgrms-web-devcourse-final-project/projects/42
+          column_name: Todo  # Todo 열로 이동
+          github_token: ${{ secrets.GITHUB_TOKEN }}
