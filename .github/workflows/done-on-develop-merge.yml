@@ -16,6 +16,6 @@ jobs:
       - name: Move Issue to Done
         uses: actions/add-to-project@v0.3.0
         with:
-          project_url: https://github.com/orgs/prgrms-web-devcourse-final-project/projects/42
+          project-url: https://github.com/orgs/prgrms-web-devcourse-final-project/projects/42
           column_name: Done # Done 열로 이동
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
