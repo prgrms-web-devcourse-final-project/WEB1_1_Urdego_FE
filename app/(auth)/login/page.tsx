@@ -24,80 +24,10 @@ interface LoginError {
   password: string;
 }
 
-const connectSSE = (userId: string) => {
-  const { setEventSource } = useSSEStore.getState();
-  let retryCount = 0;
-  const MAX_RETRIES = 3;
-
-  const connect = () => {
-    try {
-      const url = `/api/notification-service/connect/${encodeURIComponent(userId)}`;
-      console.log('Connecting to SSE:', url);
-
-      const eventSource = new EventSource(url, {
-        withCredentials: true,
-      });
-
-      eventSource.onopen = () => {
-        console.log('SSE connection established');
-        console.log('Connection details:', {
-          readyState: eventSource.readyState,
-          url: eventSource.url,
-        });
-        retryCount = 0;
-      };
-
-      eventSource.onmessage = (event) => {
-        console.log('Received SSE message:', event.data);
-        try {
-          const data = JSON.parse(event.data);
-          // 메시지 처리 로직
-          console.log('Parsed message data:', data);
-        } catch (error) {
-          console.error('Error parsing SSE message:', error);
-        }
-      };
-
-      eventSource.onerror = (error) => {
-        console.error('SSE Connection Error:', error);
-        console.error('Error details:', {
-          type: error.type,
-          eventPhase: error.eventPhase,
-          target: error.target,
-          readyState: eventSource?.readyState,
-        });
-
-        if (eventSource.readyState === EventSource.CLOSED) {
-          eventSource.close();
-          setEventSource(null);
-
-          if (retryCount < MAX_RETRIES) {
-            retryCount++;
-            const delay = Math.min(1000 * Math.pow(2, retryCount), 10000);
-            console.log(
-              `Attempting reconnection in ${delay / 1000} seconds... (Attempt ${retryCount} of ${MAX_RETRIES})`
-            );
-            setTimeout(connect, delay);
-          } else {
-            console.error('Max retry attempts reached for SSE connection');
-          }
-        }
-      };
-
-      setEventSource(eventSource);
-      return eventSource;
-    } catch (error) {
-      console.error('Failed to initialize SSE:', error);
-      return null;
-    }
-  };
-
-  return connect();
-};
-
 const Login = () => {
   const router = useRouter();
   const setNickname = useUserStore((state) => state.setNickname);
+  const { connect } = useSSEStore();
 
   const [isHiddenPassword, setIsHiddenPassword] = useState(true);
   const [email, setEmail] = useState('');
@@ -119,7 +49,6 @@ const Login = () => {
     let isValid = true;
     const newErrors = { email: '', password: '' };
 
-    // 이메일 검증
     if (email) {
       if (!validateEmail(email)) {
         newErrors.email = '이메일 형식이 올바르지 않습니다 (예: xxx@xxx.com)';
@@ -127,7 +56,6 @@ const Login = () => {
       }
     }
 
-    // 기존 빈 값 검증
     if (!email || !password) {
       isValid = false;
     }
@@ -159,7 +87,7 @@ const Login = () => {
 
       // SSE 연결 시도
       try {
-        const eventSource = connectSSE(email);
+        const eventSource = connect(email);
         if (!eventSource) {
           toast(
             '실시간 알림 연결에 실패했습니다. 일부 기능이 제한될 수 있습니다.',
@@ -209,7 +137,6 @@ const Login = () => {
       }));
       setIsFormValid(false);
     } else {
-      // 이메일이 유효하고 비밀번호가 있으면 폼 유효
       setIsFormValid(!!value && !!password);
     }
   };
@@ -217,8 +144,6 @@ const Login = () => {
   const handlePasswordChange = (value: string) => {
     setPassword(value);
     setErrors({ ...errors, password: '' });
-
-    // 비밀번호가 있고 이메일이 유효하면 폼 유효
     setIsFormValid(!!value && !!email && validateEmail(email));
   };
 
